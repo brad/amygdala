@@ -43,7 +43,7 @@ var Amygdala = function(options) {
   if (this._config.localStorage) {
     each(this._schema, function(value, key) {
       // check each schema entry for localStorage data
-      // TODO: filter out apiUrl and idAttribute 
+      // TODO: filter out apiUrl and idAttribute
       var storageCache = window.localStorage.getItem('amy-' + key);
       if (storageCache) {
         this._set(key, JSON.parse(storageCache), {'silent': true} );
@@ -174,7 +174,7 @@ Amygdala.prototype._emitChange = function(type) {
       // TODO: compare the previous object and trigger change events
     }.bind(this), type), 150);
   }
-  
+
   this._changeEvents[type]();
 }
 
@@ -191,7 +191,7 @@ Amygdala.prototype._set = function(type, response, options) {
   // and store it under `store` for easy access.
   var store = this._store[type] ? this._store[type] : this._store[type] = {};
   var schema = this._schema[type];
-  var wrappedResponse = false;
+  var wrappedResponse = options && options.method === 'OPTIONS';
 
   if (isString(response)) {
     // If the response is a string, try JSON.parse.
@@ -216,6 +216,10 @@ Amygdala.prototype._set = function(type, response, options) {
       response = [response];
       wrappedResponse = true;
     }
+  }
+
+  if(options && options.method === 'OPTIONS') {
+    this._schema[type].options = response[0];
   }
 
   each(response, function(obj) {
@@ -387,7 +391,7 @@ Amygdala.prototype.add = function(type, object, options) {
 
   // Dynamic URL is now accepted in post
   object.url ? options.url = object.url : null;
-  
+
   return this._post(options.url, object)
     .then(partial(this._setAjax, type).bind(this));
 };
@@ -454,6 +458,27 @@ Amygdala.prototype.remove = function(type, object) {
 
   return this._delete(url, object)
     .then(partial(this._remove, type, object).bind(this));
+};
+
+Amygdala.prototype.options = function(type, options) {
+  // OPTIONS request for `type`
+  //
+  // type: schema key/store (teams, users)
+  // options: extra options
+  // - url: url override
+
+  // Default to the URI for 'type'
+  options = options || {};
+  defaults(options, {'url': this._getURI(type)});
+
+  var settings = {
+    'headers': this._headers
+  };
+
+  var deferred = this.ajax('OPTIONS', this._validateURI(options.url), settings);
+  return deferred.then(function(request) {
+    return this._set(type, request.response, {'method': 'OPTIONS'});
+  }.bind(this));
 };
 
 // ------------------------------
