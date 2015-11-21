@@ -151,6 +151,9 @@ Amygdala.prototype._getURI = function(type, params) {
   // and remove it from `params` so it's not sent in the query string.
   if (params && this._getIdAttribute(type) in params) {
     url += params[this._getIdAttribute(type)];
+    if(this._config.trailing_slash) {
+      url += '/';
+    }
     delete params[this._getIdAttribute(type)];
   }
 
