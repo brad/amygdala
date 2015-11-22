@@ -443,6 +443,8 @@ Amygdala.prototype.remove = function(type, object) {
   // type: schema key/store (teams, users)
   // object: object to update local and remote
   var url = object.url;
+  var objIdCopy = {}
+  objIdCopy[this._getIdAttribute(type)] = object[this._getIdAttribute(type)];
 
   if (!url && this._getIdAttribute(type) in object) {
     url = this._getURI(type, object);
@@ -453,7 +455,7 @@ Amygdala.prototype.remove = function(type, object) {
   }
 
   return this._delete(url, object)
-    .then(partial(this._remove, type, object).bind(this));
+    .then(partial(this._remove, type, objIdCopy).bind(this));
 };
 
 // ------------------------------
